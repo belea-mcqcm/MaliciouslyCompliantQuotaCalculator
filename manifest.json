@@ -1,0 +1,10 @@
+{
+    "name": "MaliciouslyCompliantQuotaCalculatorMod",
+    "version_number": "1.0.0",
+    "website_url": "https://github.com/belea-mcqcm/MaliciouslyCompliantQuotaCalculator",
+    "description": "Calculates the optimal list of scrap on the ship that fulfills the quota.",
+    "dependencies": [
+        "BepInEx-BepInExPack-5.4.2100",
+        "NotAtomicBomb-TerminalApi-1.5.5"
+    ]
+}
