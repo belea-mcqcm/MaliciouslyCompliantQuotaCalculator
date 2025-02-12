@@ -89,7 +89,7 @@ namespace MaliciouslyCompliantQuotaCalculator
             return left + new string(' ', space - left.Length) + right;
         }
 
-        private string FormatOutput(List<GrabbableObject> scrapList, List<GrabbableObject> bestScrapList, int threshold, bool wantsQuota = true, bool wantsToday = false)
+        private string FormatOutput(List<GrabbableObject> scrapList, List<GrabbableObject> bestScrapList, int threshold, bool wantsToday = false)
         {
             StringBuilder screen = new StringBuilder();
             if (wantsToday)
@@ -116,14 +116,7 @@ namespace MaliciouslyCompliantQuotaCalculator
 
             if (bestScrapList.Count == 0)
             {
-                if (wantsQuota)
-                {
-                    screen.Append("Quota ");
-                }
-                else
-                    screen.Append("Credit target ");
-
-                screen.Append("cannot be fulfilled ");
+                screen.Append("Quota cannot be fulfilled ");
                 if (wantsToday)
                     screen.Append("today ");
                 screen.AppendLine("with current scrap!");
@@ -135,33 +128,22 @@ namespace MaliciouslyCompliantQuotaCalculator
                 screen.AppendLine(new string('=', Config.OutputSpacing.Value + subtotal.ToString().Length + 1));
             }
 
-            if (Config.Verbosity.Value > 0)
-            {
-                // Nominal value requested
-                screen.AppendLine();
-                if (wantsQuota)
-                {
-                    screen.AppendLine(SpaceOut("Quota left", AddDollarSign(threshold)));
-                }
-                else
-                {
-                    screen.AppendLine(SpaceOut("Credits needed", AddDollarSign(threshold)));
-                }
-            }
+            // Nominal value requested
+            screen.AppendLine();
+            screen.AppendLine(SpaceOut("Quota left", AddDollarSign(threshold)));
+            if (wantsToday)
+                screen.AppendLine(SpaceOut("In today's rate", AddDollarSign(ReadjustForCompanyRate(threshold, wantsToday))));
 
-            if (Config.Verbosity.Value > 1)
+            // General info
+            screen.AppendLine();
+            screen.AppendLine(SpaceOut("Total value on ship", AddDollarSign(total)));
+            if (bestScrapList.Count > 0)
             {
-                // General info
-                screen.AppendLine();
-                screen.AppendLine(SpaceOut("Total value on ship", AddDollarSign(total)));
-                if (bestScrapList.Count > 0)
-                {
-                    screen.AppendLine(SpaceOut("Total value after sale", AddDollarSign(total - subtotal)));
-                }
-                else
-                {
-                    screen.AppendLine(SpaceOut("Total value needed", AddDollarSign(ReadjustForCompanyRate(threshold - AdjustForCompanyRate(total, wantsToday), wantsToday))));
-                }
+                screen.AppendLine(SpaceOut("Total value after sale", AddDollarSign(total - subtotal)));
+            }
+            else
+            {
+                screen.AppendLine(SpaceOut("Total value needed", AddDollarSign(ReadjustForCompanyRate(threshold - AdjustForCompanyRate(total, wantsToday), wantsToday))));
             }
 
             return screen.ToString();
@@ -188,24 +170,10 @@ namespace MaliciouslyCompliantQuotaCalculator
             foreach (var scrap in scrapList)
                 mls.LogDebug("MCQC Found scrap in ship: " + scrap.itemProperties.itemName + " - " + scrap.scrapValue + "...");
 
-            string[] tokens = terminalInput.ToLower().Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
-            bool wantsToday = tokens.Contains("today");
-            bool wantsQuota = true;
+            bool wantsToday = terminalInput.ToLower().Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries).Contains("today");
             int threshold = TimeOfDay.Instance.profitQuota - TimeOfDay.Instance.quotaFulfilled;
-            foreach (string token in tokens)
-            {
-                int parsed;
-                if (int.TryParse(token, out parsed) && parsed > 0)
-                {
-                    threshold = parsed - FindObjectOfType<Terminal>().groupCredits;
-                    if (threshold <= 0)
-                        return "Current credits value exceeds value requested, there is no need to sell anything.\n";
-                    wantsQuota = false;
-                    break;
-                }
-            }
 
-            return FormatOutput(scrapList, Pisinger(scrapList, threshold, wantsToday), threshold, wantsQuota, wantsToday);
+            return FormatOutput(scrapList, Pisinger(scrapList, threshold, wantsToday), threshold, wantsToday);
         }
 
         private int AdjustForCompanyRate(int scrapValue, bool wantsToday)
@@ -343,7 +311,6 @@ namespace MaliciouslyCompliantQuotaCalculator
             private readonly ConfigFile _configFile;
 
             public ConfigEntry<int> OutputSpacing;
-            public ConfigEntry<int> Verbosity;
             public ConfigEntry<bool> IncreasingOrder;
 
             public MCQCMConfig(ConfigFile configFile)
@@ -354,7 +321,6 @@ namespace MaliciouslyCompliantQuotaCalculator
             public void RegisterOptions()
             {
                 OutputSpacing = _configFile.Bind("General", "OutputSpacing", 20, new ConfigDescription("Spacing between scrap name column and scrap value column.", new AcceptableValueRange<int>(15, 30), Array.Empty<object>()));
-                Verbosity = _configFile.Bind("General", "Verbosity", 0, new ConfigDescription("Verbosity level of output.", new AcceptableValueRange<int>(0, 2), Array.Empty<object>()));
                 IncreasingOrder = _configFile.Bind("General", "IncreasingOrder", true, new ConfigDescription("Ordering of items of the same type."));
             }
         }
