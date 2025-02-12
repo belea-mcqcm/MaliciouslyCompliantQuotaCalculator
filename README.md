@@ -20,14 +20,9 @@ Running `mcqc today <num>` outputs what ship-scrap needs to be sold to reach `nu
 
 `OutputSpacing` controls how much space there is between the scrap name column and the scrap value column, 15 being the smallest and 30 being the biggest.
 
-`Verbosity` refers to how much/how detailed the outputted information is:
-    - 0 = Just the list of scrap to be sold and their sum;
-    - 1 = ;
-    - 2 = .
+`Verbosity` refers to how much/how detailed the outputted information is.
 
-`IncreasingOrder` decides what happens to two items of the same type when displayed in the list:
-    - true = values get higher the lower in the list they are;
-    - false = values get lower the lower in the list they are.
+`IncreasingOrder` decides what happens to two items of the same type when displayed in the list.
 
 ## Installation
 
