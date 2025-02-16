@@ -30,13 +30,12 @@ namespace MaliciouslyCompliantQuotaCalculator
         }
     }
 
-    // TODO get fines if company catches you using this command
     [BepInPlugin(modGUID, modName, modVersion)]
     public class MCQCModBase : BaseUnityPlugin
     {
         private const string modGUID = "belea.mcqcm";
         private const string modName = "Maliciously Compliant Quota Calculator Mod";
-        private const string modVersion = "1.0.0";
+        private const string modVersion = "1.0.1";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MCQCModBase Instance;
