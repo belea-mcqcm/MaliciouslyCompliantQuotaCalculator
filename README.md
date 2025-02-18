@@ -18,7 +18,7 @@ Running `mcqc today <target>` outputs what ship-scrap needs to be sold to have a
 
 >NOTE: When calculating for a `<target>`, overtime is taken into consideration. Subtotals might appear smaller than needed at first glance.
 
->For example, if the input is `mcqc 550`, the command will calculate how much and what scrap to sell to get to at least 550 total credits with what you already have, **not** to get an _extra_ 550. 
+>If the input is `mcqc 550`, the command will calculate how much and what scrap to sell to get to _at least_ 550 total credits in total _including_ what you already have saved, **not** to get an _extra_ 550 on top of your current balance. 
 
 The commands output some other relevant information:
 * How much was needed to meet the threshold required: `Quota/Target left`;
