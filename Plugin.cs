@@ -35,7 +35,7 @@ namespace MaliciouslyCompliantQuotaCalculator
     {
         private const string modGUID = "belea.mcqcm";
         private const string modName = "Maliciously Compliant Quota Calculator Mod";
-        private const string modVersion = "1.0.1";
+        private const string modVersion = "1.1.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MCQCModBase Instance;
@@ -68,7 +68,7 @@ namespace MaliciouslyCompliantQuotaCalculator
 
         private int GetTotalValue(List<GrabbableObject> scrapList)
         {
-            return scrapList.Sum((GrabbableObject scrap) => scrap.scrapValue); ;
+            return scrapList.Sum((GrabbableObject scrap) => scrap.scrapValue);
         }
 
         // Add ellipses if item name too long
@@ -88,7 +88,7 @@ namespace MaliciouslyCompliantQuotaCalculator
             return left + new string(' ', space - left.Length) + right;
         }
 
-        private string FormatOutput(List<GrabbableObject> scrapList, List<GrabbableObject> bestScrapList, int threshold, bool wantsToday = false)
+        private string FormatOutput(List<GrabbableObject> scrapList, List<GrabbableObject> bestScrapList, int threshold, bool wantsToday, bool wantsQuota)
         {
             StringBuilder screen = new StringBuilder();
             if (wantsToday)
@@ -115,10 +115,7 @@ namespace MaliciouslyCompliantQuotaCalculator
 
             if (bestScrapList.Count == 0)
             {
-                screen.Append("Quota cannot be fulfilled ");
-                if (wantsToday)
-                    screen.Append("today ");
-                screen.AppendLine("with current scrap!");
+                screen.Append($"{(wantsQuota ? "Quota" : "Target")} cannot be fulfilled{ (wantsToday ? "today" : "") } with current scrap!");
             }
             else
             {
@@ -129,7 +126,7 @@ namespace MaliciouslyCompliantQuotaCalculator
 
             // Nominal value requested
             screen.AppendLine();
-            screen.AppendLine(SpaceOut("Quota left", AddDollarSign(threshold)));
+            screen.AppendLine(SpaceOut($"{(wantsQuota ? "Quota" : "Target")} left", AddDollarSign(threshold)));
             if (wantsToday)
                 screen.AppendLine(SpaceOut("In today's rate", AddDollarSign(ReadjustForCompanyRate(threshold, wantsToday))));
 
@@ -169,10 +166,30 @@ namespace MaliciouslyCompliantQuotaCalculator
             foreach (var scrap in scrapList)
                 mls.LogDebug("MCQC Found scrap in ship: " + scrap.itemProperties.itemName + " - " + scrap.scrapValue + "...");
 
-            bool wantsToday = terminalInput.ToLower().Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries).Contains("today");
+            var tokens = terminalInput.ToLower().Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
+            bool wantsToday = tokens.Contains("today");
+            bool wantsQuota = true;
             int threshold = TimeOfDay.Instance.profitQuota - TimeOfDay.Instance.quotaFulfilled;
+            foreach (var token in tokens)
+            {
+                if (int.TryParse(token, out int result) && result > 0)
+                {
+                    wantsQuota = false;
+                    int dayOT = 15 * (wantsToday ? TimeOfDay.Instance.daysUntilDeadline : -1);
+                    Terminal terminal = FindObjectOfType<Terminal>();
+                    if (TimeOfDay.Instance.profitQuota < (result + TimeOfDay.Instance.quotaFulfilled + 5 * dayOT))
+                    {
+                        threshold = Mathf.CeilToInt((5 * (result - terminal.groupCredits - dayOT) + threshold) / 6f);
+                    }
+                    else
+                    {
+                        threshold = Math.Max(result - terminal.groupCredits, threshold);
+                    }
+                    break;
+                }
+            }
 
-            return FormatOutput(scrapList, Pisinger(scrapList, threshold, wantsToday), threshold, wantsToday);
+            return FormatOutput(scrapList, Pisinger(scrapList, threshold, wantsToday), threshold, wantsToday, wantsQuota);
         }
 
         private int AdjustForCompanyRate(int scrapValue, bool wantsToday)
@@ -185,7 +202,6 @@ namespace MaliciouslyCompliantQuotaCalculator
             return wantsToday ? Mathf.CeilToInt(scrapValue / StartOfRound.Instance.companyBuyingRate) : scrapValue;
         }
 
-        // TODO always assert stuff, better check the bookmark
         List<GrabbableObject> Pisinger(List<GrabbableObject> scrapList, int threshold, bool wantsToday)
         {
             int totalValue = GetTotalValue(scrapList);
